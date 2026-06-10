@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio — Your Name</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500&family=Space+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+
+  <!-- CURSOR -->
+  <div id="c-dot"></div>
+  <div id="c-ring"></div>
+
+  <!-- SCROLL PROGRESS -->
+  <div id="prog"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Aldizar<span>.</span>Apriliansyah</div>
+    <ul class="nav-links">
+      <li><a href="#works">Work</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-reel">
+      <div class="hero-reel-inner"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Content Creator · Video Editor · Videographer</div>
+      <h1 class="hero-title">
+        I TELL<br />
+        <span class="line2">STORIES.</span>
+      </h1>
+      <p class="hero-sub">
+        Based in Jakarta. Turning cameras and timelines into work<br />
+        people actually feel.
+      </p>
+    </div>
+    <div class="hero-scroll-line">
+      <div class="scr-bar"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WORKS
+       ────────────────────────────────────────────────────────
+       Projects are defined in js/projects.js — edit that file
+       to add, remove, or update your work.
+  ============================================================ -->
+  <section id="works">
+    <div class="works-top reveal">
+      <div>
+        <div class="works-label">Selected Work</div>
+        <div class="works-title">PROJECTS</div>
+      </div>
+      <div class="works-count reveal rd1" id="works-count">— 01 / 05</div>
+    </div>
+
+    <div class="stage">
+      <!-- MEDIA LEFT -->
+      <div class="media-stack" id="media-stack"></div>
+
+      <!-- INFO RIGHT -->
+      <div class="info-panel">
+        <div class="ghost-num" id="ghost-num">01</div>
+        <div class="info-inner" id="info-inner">
+          <div class="info-cat"   id="info-cat"></div>
+          <div class="info-title" id="info-title"></div>
+          <div class="info-desc"  id="info-desc"></div>
+          <div class="info-meta"  id="info-meta"></div>
+          <div class="info-nav">
+            <button class="arr-btn" id="btn-prev" aria-label="Previous">←</button>
+            <button class="arr-btn" id="btn-next" aria-label="Next">→</button>
+            <span class="slide-counter" id="slide-counter"></span>
+            <div class="peek-strip" id="peek-strip"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-pre reveal">Let's create something</div>
+    <h2 class="contact-h reveal rd1">
+      SAY
+      <span class="ghost">HELLO.</span>
+    </h2>
+    <a href="mailto:hello@yourname.com" class="contact-email reveal rd2">
+      aldizarKING@gmail.com
+    </a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© 2025 YourName</span>
+    <ul class="f-links">
+      <li><a href="https://www.instagram.com/aldizarlyzerg/">Instagram</a></li>
+      <li><a href="https://www.linkedin.com/in/aldizar-apriliansyah-583528223/">LinkedIn</a></li>
+      <li><a href="https://www.tiktok.com/@lyzergsx">TikTok</a></li>
+    </ul>
+  </footer>
+
+  <!-- JS: projects data first, then main logic -->
+  <script src="js/projects.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
