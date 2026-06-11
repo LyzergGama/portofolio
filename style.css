@@ -348,12 +348,17 @@ nav::before {
   display: block;
 }
 
-/* YouTube iframe — fills the 9:16 container perfectly */
+/* YouTube iframe — force-fill the 9:16 container, no black bars.
+   YouTube's embed adds its own letterboxing, so we oversize the
+   iframe and re-center it to cover the full frame. */
 .media-item .yt-iframe {
-  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300%;
   height: 100%;
   border: none;
-  display: block;
   pointer-events: none;
 }
 
