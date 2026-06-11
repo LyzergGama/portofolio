@@ -56,6 +56,12 @@ function initYTPlayer(idx) {
       onReady: (e) => {
         e.target.mute();
         if (idx === current) e.target.playVideo();
+        // YouTube API sets width/height attributes that fight our CSS — remove them
+        const iframe = e.target.getIframe();
+        iframe.removeAttribute('width');
+        iframe.removeAttribute('height');
+        iframe.style.width  = '';
+        iframe.style.height = '';
       },
     },
   });
