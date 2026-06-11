@@ -10,66 +10,11 @@ const infoInner   = document.getElementById('info-inner');
 const btnNext     = document.getElementById('btn-next');
 const btnPrev     = document.getElementById('btn-prev');
 const progressBar = document.getElementById('prog');
+const muteBtn     = document.getElementById('mute-btn');
+const muteIcon    = muteBtn.querySelector('.btn-icon');
+const muteLabel   = muteBtn.querySelector('.btn-label');
 
-/* ── YOUTUBE IFRAME API ──────────────────────────────────────
-   Load the API once, then manage players per slide.
-─────────────────────────────────────────────────────────── */
-const ytPlayers = {};   // keyed by project index
-let   isMuted   = true; // start muted (browser requirement)
-
-// Inject YouTube IFrame API script once
-const ytScript = document.createElement('script');
-ytScript.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(ytScript);
-
-// Called automatically by the API when ready
-window.onYouTubeIframeAPIReady = function () {
-  // Init player for the first (active) slide immediately
-  initYTPlayer(0);
-};
-
-function initYTPlayer(idx) {
-  const project = projects[idx];
-  if (project.type !== 'youtube') return;
-  if (ytPlayers[idx]) return; // already created
-
-  const id      = getYouTubeId(project.src);
-  const iframeId = `yt-player-${idx}`;
-
-  // Find the placeholder div we'll replace with the iframe
-  const placeholder = mediaStack.querySelector(`[data-yt-idx="${idx}"]`);
-  if (!placeholder) return;
-
-  ytPlayers[idx] = new YT.Player(placeholder, {
-    videoId: id,
-    playerVars: {
-      autoplay:        1,
-      mute:            1,   // must start muted
-      loop:            1,
-      playlist:        id,  // required for loop
-      controls:        0,
-      modestbranding:  1,
-      rel:             0,
-      playsinline:     1,
-    },
-    events: {
-      onReady: (e) => {
-        e.target.mute();
-        if (idx === current) e.target.playVideo();
-        // YouTube API sets width/height attributes that fight our CSS — remove them
-        const iframe = e.target.getIframe();
-        iframe.removeAttribute('width');
-        iframe.removeAttribute('height');
-        iframe.style.width  = '';
-        iframe.style.height = '';
-      },
-    },
-  });
-}
-
-/* ── YOUTUBE HELPER ─────────────────────────────────────────
-   Accepts any YouTube URL format.
-─────────────────────────────────────────────────────────── */
+/* ── YOUTUBE HELPER ─────────────────────────────────────── */
 function getYouTubeId(url) {
   const patterns = [
     /youtube\.com\/watch\?v=([^&]+)/,
@@ -77,34 +22,39 @@ function getYouTubeId(url) {
     /youtube\.com\/shorts\/([^?&]+)/,
     /youtube\.com\/embed\/([^?&]+)/,
   ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
   }
   return null;
 }
 
-/* ── MUTE BUTTON ────────────────────────────────────────── */
-const muteBtn   = document.getElementById('mute-btn');
-const muteIcon  = muteBtn.querySelector('.btn-icon');
-const muteLabel = muteBtn.querySelector('.btn-label');
+/* ── MUTE STATE ─────────────────────────────────────────── */
+let isMuted = true;
+
+function getAllYTIframes() {
+  return mediaStack.querySelectorAll('iframe.yt-frame');
+}
+
+function sendMuteToAll(muted) {
+  getAllYTIframes().forEach(iframe => {
+    const cmd = muted ? 'mute' : 'unMute';
+    iframe.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func: cmd, args: [] }),
+      '*'
+    );
+  });
+}
 
 function setMuteState(muted) {
   isMuted = muted;
   muteIcon.textContent  = muted ? '🔇' : '🔊';
   muteLabel.textContent = muted ? 'Unmute' : 'Mute';
-
-  // Apply to all active players
-  Object.values(ytPlayers).forEach(player => {
-    if (player && typeof player.mute === 'function') {
-      muted ? player.mute() : player.unMute();
-    }
-  });
+  sendMuteToAll(muted);
 }
 
 muteBtn.addEventListener('click', () => setMuteState(!isMuted));
 
-// Show mute button only when current slide is youtube type
 function updateMuteBtn(idx) {
   muteBtn.style.display = projects[idx].type === 'youtube' ? 'flex' : 'none';
 }
@@ -116,8 +66,19 @@ projects.forEach((project, i) => {
   slide.dataset.index = i;
 
   if (project.type === 'youtube') {
-    // Placeholder div — YouTube IFrame API replaces this with an iframe
-    slide.innerHTML = `<div data-yt-idx="${i}" id="yt-player-${i}"></div>`;
+    const id = getYouTubeId(project.src);
+    // enablejsapi=1 allows postMessage mute control
+    // mute=1 starts muted (browser autoplay policy)
+    // For 9:16 Shorts content use the vertical crop via start param if needed
+    const src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+    slide.innerHTML = `<iframe
+      class="yt-frame"
+      src="${i === 0 ? src : ''}"
+      data-src="${src}"
+      allow="autoplay; encrypted-media"
+      allowfullscreen
+      frameborder="0"
+    ></iframe>`;
 
   } else if (project.type === 'video') {
     slide.innerHTML = `<video src="${project.src}" autoplay muted loop playsinline></video>`;
@@ -128,7 +89,7 @@ projects.forEach((project, i) => {
 
   mediaStack.appendChild(slide);
 
-  // ── Peek thumbnail ───────────────────────────────────────
+  // ── Peek thumbnail ──────────────────────────────────────
   const thumb = document.createElement('div');
   thumb.className = 'peek-thumb' + (i === 0 ? ' active-peek' : '');
   thumb.dataset.index = i;
@@ -158,7 +119,6 @@ function pad(n) {
 /* ── UPDATE INFO PANEL ──────────────────────────────────── */
 function updateInfo(idx) {
   const p = projects[idx];
-
   infoInner.classList.remove('entered');
 
   setTimeout(() => {
@@ -169,7 +129,6 @@ function updateInfo(idx) {
 
     document.getElementById('slide-counter').innerHTML =
       `<span class="cur">${pad(idx)}</span> / ${pad(total - 1)}`;
-
     document.getElementById('works-count').textContent =
       `— ${pad(idx)} / ${pad(total - 1)}`;
 
@@ -177,6 +136,7 @@ function updateInfo(idx) {
     if (p.year)   meta += `<div class="meta-item"><div class="meta-label">Year</div><div class="meta-val">${p.year}</div></div>`;
     if (p.role)   meta += `<div class="meta-item"><div class="meta-label">Role</div><div class="meta-val">${p.role}</div></div>`;
     if (p.client) meta += `<div class="meta-item"><div class="meta-label">Client</div><div class="meta-val">${p.client}</div></div>`;
+    if (p.tool)   meta += `<div class="meta-item"><div class="meta-label">Edited With</div><div class="meta-val">${p.tool}</div></div>`;
     document.getElementById('info-meta').innerHTML = meta;
 
     requestAnimationFrame(() => infoInner.classList.add('entered'));
@@ -187,28 +147,22 @@ function updateInfo(idx) {
 function updateMedia(newIdx, oldIdx) {
   const slides = mediaStack.querySelectorAll('.media-item');
 
-  // Lazy-init YouTube player when slide first becomes active
+  // Lazy-load iframe src when slide first becomes active
+  const newSlide  = slides[newIdx];
+  const iframe    = newSlide.querySelector('iframe.yt-frame');
+  if (iframe && !iframe.src) {
+    iframe.src = iframe.dataset.src;
+  }
+
+  // Re-apply mute state after a beat (iframe may have just loaded)
   if (projects[newIdx].type === 'youtube') {
-    if (window.YT && YT.Player) {
-      initYTPlayer(newIdx);
-    }
-    // Pause old player if it's YouTube
-    if (projects[oldIdx].type === 'youtube' && ytPlayers[oldIdx]) {
-      ytPlayers[oldIdx].pauseVideo?.();
-    }
-    // Play new player, respect mute state
-    setTimeout(() => {
-      if (ytPlayers[newIdx]) {
-        ytPlayers[newIdx].playVideo?.();
-        isMuted ? ytPlayers[newIdx].mute() : ytPlayers[newIdx].unMute();
-      }
-    }, 300);
+    setTimeout(() => sendMuteToAll(isMuted), 800);
   }
 
   slides[oldIdx].classList.remove('active');
   slides[oldIdx].classList.add('prev');
   setTimeout(() => slides[oldIdx].classList.remove('prev'), 900);
-  slides[newIdx].classList.add('active');
+  newSlide.classList.add('active');
 
   updateMuteBtn(newIdx);
 }
