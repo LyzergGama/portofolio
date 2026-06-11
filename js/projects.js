@@ -76,6 +76,29 @@ const projects = [
     tool: "After Effects + Capcut",
   },
 
-  /* ➕ TAMBAH PROJECT BARU DI SINI */
+  {
+    type:     "youtube",
+    src:      "https://youtube.com/shorts/nnaJIy-m7mM",  // ← ganti dengan link YouTube lo
+    category: "Automotive",
+    title:    "IMOS Speedramp Edit",
+    desc:     "Speedramp edit I've made during Indonesia Motorcycle Show 2025",
+    year:     "2025",
+    role:     "Videographer / Editor",
+    client:   "Personal",
+    tool: "After Effects",
+  },
+   
+  {
+    type:     "youtube",
+    src:      "https://youtube.com/shorts/KOji-J0qJEo",  // ← ganti dengan link YouTube lo
+    category: "Automotive",
+    title:    "Hafez Indonesia Edit Trials",
+    desc:     "Video I've edited to be able to work at Hafez Indonesia, this was shot in S-Log",
+    year:     "2025",
+    role:     "Editor",
+    client:   "HAFEZ",
+    tool: "After Effects",
+  },
+   /* ➕ TAMBAH PROJECT BARU DI SINI */
 
 ];
