@@ -32,25 +32,18 @@ function getYouTubeId(url) {
 /* ── MUTE STATE ─────────────────────────────────────────── */
 let isMuted = true;
 
-function getAllYTIframes() {
-  return mediaStack.querySelectorAll('iframe.yt-frame');
-}
-
-function sendMuteToAll(muted) {
-  getAllYTIframes().forEach(iframe => {
-    const cmd = muted ? 'mute' : 'unMute';
-    iframe.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func: cmd, args: [] }),
-      '*'
-    );
-  });
-}
-
 function setMuteState(muted) {
   isMuted = muted;
   muteIcon.textContent  = muted ? '🔇' : '🔊';
   muteLabel.textContent = muted ? 'Unmute' : 'Mute';
-  sendMuteToAll(muted);
+
+  // Reload the active iframe with updated mute param
+  const slides = mediaStack.querySelectorAll('.media-item');
+  const activeIframe = slides[current]?.querySelector('iframe.yt-frame');
+  if (activeIframe && activeIframe.src) {
+    const base = activeIframe.dataset.src.replace('&mute=1', '').replace('&mute=0', '');
+    activeIframe.src = base + (muted ? '&mute=1' : '&mute=0');
+  }
 }
 
 muteBtn.addEventListener('click', () => setMuteState(!isMuted));
@@ -147,16 +140,17 @@ function updateInfo(idx) {
 function updateMedia(newIdx, oldIdx) {
   const slides = mediaStack.querySelectorAll('.media-item');
 
-  // Lazy-load iframe src when slide first becomes active
-  const newSlide  = slides[newIdx];
-  const iframe    = newSlide.querySelector('iframe.yt-frame');
-  if (iframe && !iframe.src) {
-    iframe.src = iframe.dataset.src;
-  }
+  // Stop old iframe by clearing src — only reliable way to kill audio
+  const oldIframe = slides[oldIdx].querySelector('iframe.yt-frame');
+  if (oldIframe) oldIframe.src = '';
 
-  // Re-apply mute state after a beat (iframe may have just loaded)
-  if (projects[newIdx].type === 'youtube') {
-    setTimeout(() => sendMuteToAll(isMuted), 800);
+  // Load new iframe src (always reload so autoplay fires fresh)
+  const newSlide = slides[newIdx];
+  const newIframe = newSlide.querySelector('iframe.yt-frame');
+  if (newIframe) {
+    // Rebuild src with mute param matching current state
+    const base = newIframe.dataset.src.replace('&mute=1', '').replace('&mute=0', '');
+    newIframe.src = base + (isMuted ? '&mute=1' : '&mute=0');
   }
 
   slides[oldIdx].classList.remove('active');
