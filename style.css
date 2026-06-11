@@ -354,8 +354,37 @@ nav::before {
   height: 100%;
   border: none;
   display: block;
-  pointer-events: none; /* prevent clicking into YouTube UI */
+  pointer-events: none;
 }
+
+/* Mute / unmute toggle button */
+#mute-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  background: rgba(12, 12, 12, 0.75);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  cursor: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color .25s, color .25s, background .25s;
+}
+#mute-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(12,12,12,.9);
+}
+#mute-btn .btn-icon { font-size: 13px; }
 
 /* Cinematic vignette — portrait-friendly */
 .media-stack::after {
