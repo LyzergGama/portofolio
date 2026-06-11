@@ -11,12 +11,58 @@ const btnNext     = document.getElementById('btn-next');
 const btnPrev     = document.getElementById('btn-prev');
 const progressBar = document.getElementById('prog');
 
+/* ── YOUTUBE IFRAME API ──────────────────────────────────────
+   Load the API once, then manage players per slide.
+─────────────────────────────────────────────────────────── */
+const ytPlayers = {};   // keyed by project index
+let   isMuted   = true; // start muted (browser requirement)
+
+// Inject YouTube IFrame API script once
+const ytScript = document.createElement('script');
+ytScript.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(ytScript);
+
+// Called automatically by the API when ready
+window.onYouTubeIframeAPIReady = function () {
+  // Init player for the first (active) slide immediately
+  initYTPlayer(0);
+};
+
+function initYTPlayer(idx) {
+  const project = projects[idx];
+  if (project.type !== 'youtube') return;
+  if (ytPlayers[idx]) return; // already created
+
+  const id      = getYouTubeId(project.src);
+  const iframeId = `yt-player-${idx}`;
+
+  // Find the placeholder div we'll replace with the iframe
+  const placeholder = mediaStack.querySelector(`[data-yt-idx="${idx}"]`);
+  if (!placeholder) return;
+
+  ytPlayers[idx] = new YT.Player(placeholder, {
+    videoId: id,
+    playerVars: {
+      autoplay:        1,
+      mute:            1,   // must start muted
+      loop:            1,
+      playlist:        id,  // required for loop
+      controls:        0,
+      modestbranding:  1,
+      rel:             0,
+      playsinline:     1,
+    },
+    events: {
+      onReady: (e) => {
+        e.target.mute();
+        if (idx === current) e.target.playVideo();
+      },
+    },
+  });
+}
+
 /* ── YOUTUBE HELPER ─────────────────────────────────────────
-   Accepts any YouTube URL format:
-     https://www.youtube.com/watch?v=XXXXXXXXXXX
-     https://youtu.be/XXXXXXXXXXX
-     https://youtube.com/shorts/XXXXXXXXXXX
-   Returns the embed iframe src with autoplay + mute.
+   Accepts any YouTube URL format.
 ─────────────────────────────────────────────────────────── */
 function getYouTubeId(url) {
   const patterns = [
@@ -32,12 +78,29 @@ function getYouTubeId(url) {
   return null;
 }
 
-function makeYouTubeEmbed(url) {
-  const id = getYouTubeId(url);
-  if (!id) return null;
-  // autoplay=1, mute=1, loop=1, controls=0 for clean look
-  // playlist=id needed for loop to work
-  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&modestbranding=1&rel=0&playsinline=1`;
+/* ── MUTE BUTTON ────────────────────────────────────────── */
+const muteBtn   = document.getElementById('mute-btn');
+const muteIcon  = muteBtn.querySelector('.btn-icon');
+const muteLabel = muteBtn.querySelector('.btn-label');
+
+function setMuteState(muted) {
+  isMuted = muted;
+  muteIcon.textContent  = muted ? '🔇' : '🔊';
+  muteLabel.textContent = muted ? 'Unmute' : 'Mute';
+
+  // Apply to all active players
+  Object.values(ytPlayers).forEach(player => {
+    if (player && typeof player.mute === 'function') {
+      muted ? player.mute() : player.unMute();
+    }
+  });
+}
+
+muteBtn.addEventListener('click', () => setMuteState(!isMuted));
+
+// Show mute button only when current slide is youtube type
+function updateMuteBtn(idx) {
+  muteBtn.style.display = projects[idx].type === 'youtube' ? 'flex' : 'none';
 }
 
 /* ── BUILD CAROUSEL DOM ─────────────────────────────────── */
@@ -47,18 +110,8 @@ projects.forEach((project, i) => {
   slide.dataset.index = i;
 
   if (project.type === 'youtube') {
-    // YouTube: use iframe embed, only load src when active (performance)
-    const embedUrl = makeYouTubeEmbed(project.src);
-    slide.innerHTML = `
-      <iframe
-        class="yt-iframe"
-        src="${i === 0 ? embedUrl : ''}"
-        data-src="${embedUrl}"
-        frameborder="0"
-        allow="autoplay; encrypted-media"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen
-      ></iframe>`;
+    // Placeholder div — YouTube IFrame API replaces this with an iframe
+    slide.innerHTML = `<div data-yt-idx="${i}" id="yt-player-${i}"></div>`;
 
   } else if (project.type === 'video') {
     slide.innerHTML = `<video src="${project.src}" autoplay muted loop playsinline></video>`;
@@ -74,7 +127,6 @@ projects.forEach((project, i) => {
   thumb.className = 'peek-thumb' + (i === 0 ? ' active-peek' : '');
   thumb.dataset.index = i;
 
-  // For YouTube, use the auto-generated thumbnail image
   if (project.type === 'youtube') {
     const id = getYouTubeId(project.src);
     thumb.innerHTML = `<img src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="${project.title}" loading="lazy" />`;
@@ -129,17 +181,30 @@ function updateInfo(idx) {
 function updateMedia(newIdx, oldIdx) {
   const slides = mediaStack.querySelectorAll('.media-item');
 
-  // Lazy-load YouTube iframe when it becomes active
-  const newSlide = slides[newIdx];
-  const iframe   = newSlide.querySelector('iframe.yt-iframe');
-    if (iframe && iframe.getAttribute('src') === '') {
-      iframe.src = iframe.dataset.src;
+  // Lazy-init YouTube player when slide first becomes active
+  if (projects[newIdx].type === 'youtube') {
+    if (window.YT && YT.Player) {
+      initYTPlayer(newIdx);
     }
+    // Pause old player if it's YouTube
+    if (projects[oldIdx].type === 'youtube' && ytPlayers[oldIdx]) {
+      ytPlayers[oldIdx].pauseVideo?.();
+    }
+    // Play new player, respect mute state
+    setTimeout(() => {
+      if (ytPlayers[newIdx]) {
+        ytPlayers[newIdx].playVideo?.();
+        isMuted ? ytPlayers[newIdx].mute() : ytPlayers[newIdx].unMute();
+      }
+    }, 300);
+  }
 
   slides[oldIdx].classList.remove('active');
   slides[oldIdx].classList.add('prev');
   setTimeout(() => slides[oldIdx].classList.remove('prev'), 900);
-  newSlide.classList.add('active');
+  slides[newIdx].classList.add('active');
+
+  updateMuteBtn(newIdx);
 }
 
 /* ── UPDATE PEEK THUMBNAILS ─────────────────────────────── */
@@ -166,6 +231,7 @@ function goTo(newIdx) {
 
 /* ── INITIALISE ─────────────────────────────────────────── */
 updateInfo(0);
+updateMuteBtn(0);
 
 /* ── BUTTON CONTROLS ────────────────────────────────────── */
 btnNext.addEventListener('click', () => goTo(current + 1));
