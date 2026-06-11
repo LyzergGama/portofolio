@@ -25,6 +25,7 @@ const projects = [
     year:     "2026",
     role:     "Videographer / Editor",
     client:   "Vinda Tissue Indonesia",
+    tool: "CapCut",
   },
 
   {
@@ -36,6 +37,7 @@ const projects = [
     year:     "2025",
     role:     "Editor",
     client:   "ARGarage",
+    tool: "After Effects",
   },
 
   {
@@ -47,6 +49,7 @@ const projects = [
     year:     "2026",
     role:     "Videographer / Editor",
     client:   "Potamuse.Id",
+    tool: "CapCut",
   },
 
   {
@@ -58,6 +61,7 @@ const projects = [
     year:     "2026",
     role:     "Videographer / Editor",
     client:   "Imboost Kids",
+    tool: "CapCut",
   },
 
   {
@@ -69,6 +73,7 @@ const projects = [
     year:     "2025",
     role:     "Editor",
     client:   "Solar on Steroid",
+    tool: "After Effects + Capcut",
   },
 
   /* ➕ TAMBAH PROJECT BARU DI SINI */
